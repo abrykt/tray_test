@@ -11,12 +11,53 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainComponent.h"
 
+class TrayIcon
+: public juce::SystemTrayIconComponent
+{
+public:
+    TrayIcon() {
+        juce::Image image(juce::Image::PixelFormat::ARGB, 256, 256, true);
+        juce::Graphics g(image);
+
+        g.setColour(juce::Colours::white);
+        g.fillEllipse(0,0,256,256);
+
+        setIconImage(image, image);
+    };
+
+
+private:
+    void mouseDown(const juce::MouseEvent& event) override {
+
+        if (event.mods.isPopupMenu()) {
+            juce::PopupMenu m;
+
+            m.addItem(0x1337, "Quit");
+
+            auto result = m.show();
+            if (result == 0x1337) {
+                if (juce::NativeMessageBox::showYesNoBox(                                                                               juce::AlertWindow::QuestionIcon,
+                        "Shut down?",
+                        "Are you sure?") == 1) {
+                            juce::MessageManager::callAsync(
+                                                    []() {                                                  juce::JUCEApplication::getInstance()->systemRequestedQuit();
+                                                    });
+                }
+            }
+        }
+    }
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrayIcon)
+};
+
 //==============================================================================
 class TrayTestApplication  : public JUCEApplication
 {
 public:
     //==============================================================================
-    TrayTestApplication() {}
+    TrayTestApplication() {
+          trayIcon = std::make_unique<TrayIcon>();
+    }
 
     const String getApplicationName() override       { return ProjectInfo::projectName; }
     const String getApplicationVersion() override    { return ProjectInfo::versionString; }
@@ -99,6 +140,7 @@ public:
 
 private:
     std::unique_ptr<MainWindow> mainWindow;
+    std::unique_ptr<TrayIcon> trayIcon;
 };
 
 //==============================================================================
